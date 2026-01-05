@@ -5,7 +5,6 @@ const { userZod, userSigninZod } = require("../types")
 const { generateHash, compareHash } = require("../bcrypt")
 const { JWT_SECRET } = require("../config")
 const User = require("../db")
-const { useEffect } = require("react")
 
 userRouter.post("/signup", async (req, res) => {
     try {
