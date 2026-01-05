@@ -22,10 +22,10 @@ userRouter.post("/signup", async (req, res) => {
 
         validatedUser.password = await generateHash(validatedUser.password)
         
-        const user = await User.create(validatedUser)
+        const = await User.create(validatedUser)
 
         const token = jwt.sign(
-            { userId: user._id }, 
+            { userId: _id }, 
             JWT_SECRET,
             { expiresIn: '7d' }
         )
@@ -54,34 +54,32 @@ userRouter.post("/signup", async (req, res) => {
 
 userRouter.post("/signin", async (req, res) => {
     try {
-        const user = userSigninZod.safeParse(req.body)
+        const {success, data} = userSigninZod.safeParse(req.body)
 
-        if (!user.success) {
+        if (!success) {
             return res.status(400).json({
                 message: "Invalid Inputs"
             })
         }
 
-        const { username, password } = user.data
+        const { username, password } = data
 
-        const userExist = await User.findOne({username : username})
+        const user = await User.findOne({username : username})
 
-        if (!userExist) {
-            return res.status(401).json({
-                message: "Invalid username or password"
-            })
-        }
+        // If user is not found, we use a dummy hash just to waste time
+        // so the request takes the same amount of time as a valid user.
+        const storedHash = user ? user.password : "$2b$10$abcdefghijklmnopqrstuv" // A fake valid bcrypt hash
 
-        const passwordIsValid = await compareHash(password, userExist.password)
+        const passwordIsValid = await compareHash(password, storedHash)
 
-        if (!passwordIsValid) {
+        if (!user || !passwordIsValid) {
             return res.status(401).json({
                 message: "Invalid username or password"
             })
         }
         
         const token = jwt.sign(
-            { userId: userExist._id }, 
+            { userId: user._id }, 
             JWT_SECRET,
             { expiresIn: '7d' }
         )
