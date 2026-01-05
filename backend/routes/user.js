@@ -1,10 +1,11 @@
 const express = require("express")
 const jwt = require("jsonwebtoken")
 const userRouter = express.Router()
-const { userZod } = require("../types")
-const { generateHash, compareHash } = require("../bcrypt")
+const { userZod, userSigninZod } = require("../types")
+const { generateHash, compareHash, compareHash } = require("../bcrypt")
 const { JWT_SECRET } = require("../config")
 const User = require("../db")
+const { useEffect } = require("react")
 
 userRouter.post("/signup", async (req, res) => {
     try {
@@ -51,8 +52,53 @@ userRouter.post("/signup", async (req, res) => {
     }
 })
 
-userRouter.post("/signin", (req, res) => {
-    res.send("/signin")
+userRouter.post("/signin", async (req, res) => {
+    try {
+        const user = userSigninZod.safeParse(req.body)
+
+        if (!user.success) {
+            return res.status(400).json({
+                message: "Invalid Inputs"
+            })
+        }
+
+        const { username, password } = user.data
+
+        const userExist = await User.findOne({username : username})
+
+        if (!userExist) {
+            return res.status(401).json({
+                message: "Invalid username or password"
+            })
+        }
+
+        const passwordIsValid = await compareHash(password, userExist.password)
+
+        if (!passwordIsValid) {
+            return res.status(401).json({
+                message: "Invalid username or password"
+            })
+        }
+        
+        const token = jwt.sign(
+            { userId: userExist._id }, 
+            JWT_SECRET,
+            { expiresIn: '7d' }
+        )
+
+        res.status(200).json({
+            message: "Login successful",
+            token: token
+        })
+
+    } catch (error) {
+
+        console.error("Signin Error", error)
+
+        return res.status(500).json({
+            message: "Internal Server Error during signin"
+        })
+    }
 })
 
 module.exports = userRouter

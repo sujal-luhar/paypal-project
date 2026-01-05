@@ -2,11 +2,13 @@ const express = require("express");
 const jwt = require("jsonwebtoken")
 const cors = require("cors")
 const rootRouter = require("./routes");
+const { globalLimiter } = require("./rateLimiters");
 const app = express();
 PORT = 3000
 
 app.use(express.json())
 app.use(cors())
+app.use(globalLimiter)
  
 app.get("/", (req, res) => {
     console.log("Hello!")
