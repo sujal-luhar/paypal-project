@@ -22,7 +22,7 @@ userRouter.post("/signup", async (req, res) => {
 
         validatedUser.password = await generateHash(validatedUser.password)
         
-        const = await User.create(validatedUser)
+        const user = await User.create(validatedUser)
 
         const token = jwt.sign(
             { userId: _id }, 
