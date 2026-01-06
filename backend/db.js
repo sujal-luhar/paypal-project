@@ -50,10 +50,39 @@ const accountSchema = new mongoose.Schema({
     }
 })
 
+const transactionSchema = new mongoose.Schema({
+    senderId: { 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        index: true
+    },
+    receiverId: { 
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        index: true
+    },
+    amount: {
+        type: Number, 
+        required: true,
+        validate: {
+            validator: (value) => value > 0,
+            message: 'Amount must be greater than 0'
+        }
+    },
+    timestamp: {
+        type: mongoose.Schema.Types.Date,
+        required: true
+    }
+})
+
 const User = mongoose.model("User", userSchema)
 const Account = mongoose.model("Account", accountSchema)
+const Transaction = mongoose.model("Transaction", transactionSchema)
 
 module.exports = {
     User,
-    Account
+    Account,
+    Transaction
 }

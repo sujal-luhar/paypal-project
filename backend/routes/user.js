@@ -4,10 +4,11 @@ const userRouter = express.Router()
 const { userZod, userSigninZod, userUpdateZod } = require("../types")
 const { generateHash, compareHash } = require("../bcrypt")
 const { JWT_SECRET } = require("../config")
-const { User } = require("../db")
+const { User, Account } = require("../db")
 const { authMiddleware } = require("../middleware")
+const { authLimiter } = require("../rateLimiters")
 
-userRouter.post("/signup", async (req, res) => {
+userRouter.post("/signup", authLimiter, async (req, res) => {
     try {
         const parsedUser = userZod.safeParse(req.body)
 
@@ -24,8 +25,17 @@ userRouter.post("/signup", async (req, res) => {
 
         const user = await User.create(validatedUser)
 
+        // float from 1-10000
+        const randomFloat = parseFloat((Math.random() * (10000 - 1) + 1).toFixed(2));
+        const balance = Math.round(randomFloat * 100); // Use Math.round() to avoid precision errors
+        const giveRandomBalance = await Account.create({ userId: user._id, balance: balance })
+
+        // to get the balance from DB
+        const balanceInINR = parseFloat((giveRandomBalance.balance / 100).toFixed(2));
+        console.log(balanceInINR);
+
         const token = jwt.sign(
-            { userId: _id },
+            { userId: user._id },
             JWT_SECRET,
             { expiresIn: '7d' }
         )
@@ -52,7 +62,7 @@ userRouter.post("/signup", async (req, res) => {
     }
 })
 
-userRouter.post("/signin", async (req, res) => {
+userRouter.post("/signin", authLimiter, async (req, res) => {
     try {
         const { success, data } = userSigninZod.safeParse(req.body)
 
@@ -99,7 +109,7 @@ userRouter.post("/signin", async (req, res) => {
     }
 })
 
-userRouter.put("/", authMiddleware, async (req, res) => {
+userRouter.put("/", authLimiter, authMiddleware, async (req, res) => {
     try {
         const result = userUpdateZod.safeParse(req.body)
 
@@ -162,7 +172,7 @@ userRouter.get("/bulk", authMiddleware, async (req, res) => {
         }, {
             _id: 1,
             username: 1,
-            firstName: 1, 
+            firstName: 1,
             lastName: 1
         });
 
@@ -179,4 +189,4 @@ userRouter.get("/bulk", authMiddleware, async (req, res) => {
     }
 })
 
-module.exports = userRouter
+module.exports = { userRouter }

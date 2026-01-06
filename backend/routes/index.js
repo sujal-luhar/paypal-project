@@ -1,9 +1,10 @@
 const express = require("express")
-const userRouter = require("./user")
-const { authLimiter } = require("../rateLimiters")
+const { userRouter } = require("./user")
+const { accountRouter } = require("./account")
 const rootRouter = express.Router()
 
-rootRouter.use("/user", authLimiter, userRouter)
+rootRouter.use("/user", userRouter)
+rootRouter.use("/account", accountRouter)
 
 rootRouter.get("/update", (req, res) => {
     res.send("/update")
