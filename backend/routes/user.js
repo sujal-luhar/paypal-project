@@ -1,10 +1,11 @@
 const express = require("express")
 const jwt = require("jsonwebtoken")
 const userRouter = express.Router()
-const { userZod, userSigninZod } = require("../types")
+const { userZod, userSigninZod, userUpdateZod } = require("../types")
 const { generateHash, compareHash } = require("../bcrypt")
 const { JWT_SECRET } = require("../config")
 const User = require("../db")
+const { authMiddleware } = require("../middleware")
 
 userRouter.post("/signup", async (req, res) => {
     try {
@@ -20,11 +21,11 @@ userRouter.post("/signup", async (req, res) => {
         const validatedUser = parsedUser.data
 
         validatedUser.password = await generateHash(validatedUser.password)
-        
+
         const user = await User.create(validatedUser)
 
         const token = jwt.sign(
-            { userId: _id }, 
+            { userId: _id },
             JWT_SECRET,
             { expiresIn: '7d' }
         )
@@ -53,7 +54,7 @@ userRouter.post("/signup", async (req, res) => {
 
 userRouter.post("/signin", async (req, res) => {
     try {
-        const {success, data} = userSigninZod.safeParse(req.body)
+        const { success, data } = userSigninZod.safeParse(req.body)
 
         if (!success) {
             return res.status(400).json({
@@ -63,7 +64,7 @@ userRouter.post("/signin", async (req, res) => {
 
         const { username, password } = data
 
-        const user = await User.findOne({username : username})
+        const user = await User.findOne({ username: username })
 
         // If user is not found, we use a dummy hash just to waste time
         // so the request takes the same amount of time as a valid user.
@@ -76,9 +77,9 @@ userRouter.post("/signin", async (req, res) => {
                 message: "Invalid username or password"
             })
         }
-        
+
         const token = jwt.sign(
-            { userId: user._id }, 
+            { userId: user._id },
             JWT_SECRET,
             { expiresIn: '7d' }
         )
@@ -94,6 +95,70 @@ userRouter.post("/signin", async (req, res) => {
 
         return res.status(500).json({
             message: "Internal Server Error during signin"
+        })
+    }
+})
+
+userRouter.put("/", authMiddleware, async (req, res) => {
+    try {
+        const result = userUpdateZod.safeParse(req.body)
+
+        if (!result.success) {
+            return res.status(400).json({
+                message: "Validation failed",
+                details: result.error.issues
+            });
+        }
+
+        const data = result.data;
+        const updateBody = {}; // We will fill this dynamically
+
+        if (data.firstName) {
+            updateBody.firstName = data.firstName;
+        }
+
+        if (data.lastName) {
+            updateBody.lastName = data.lastName;
+        }
+
+        if (data.password) {
+            updateBody.password = await generateHash(data.password);
+        }
+
+        const user = await User.findOneAndUpdate(
+            { _id: req.userId },
+            { $set: updateBody },
+            { new: true, runValidators: true }
+        )
+
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+
+        return res.status(200).json({
+            message: "Updated Successfully"
+        })
+
+    } catch (error) {
+        console.log("Update Error", error)
+
+        return res.status(500).json({
+            message: "Internal Server Error during Update"
+        })
+    }
+})
+
+userRouter.get("/bulk", authMiddleware, async (req, res) => {
+    try {
+
+
+    } catch (error) {
+        console.log("Bulk Error", error)
+
+        return res.status(500).json({
+            message: "Internal Server Error during Update"
         })
     }
 })
