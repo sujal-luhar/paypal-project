@@ -39,17 +39,20 @@ const userSigninZod = z.strictObject({
 const userUpdateZod = z.strictObject({
   password: z
     .string()
-    .min(6, { message: 'password must be at least 6 characters' }),
+    .min(6, { message: 'password must be at least 6 characters' })
+    .optional(),
   firstName: z
     .string()
     .min(1, { message: 'firstName is required' })
     .max(50, { message: 'firstName must be at most 50 characters' })
-    .trim(),
+    .trim()
+    .optional(),
   lastName: z
     .string()
     .min(1, { message: 'lastName is required' })
     .max(50, { message: 'lastName must be at most 50 characters' })
-    .trim(),
+    .trim()
+    .optional(),
 });
 
 module.exports = {

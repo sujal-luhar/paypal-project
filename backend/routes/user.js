@@ -4,7 +4,7 @@ const userRouter = express.Router()
 const { userZod, userSigninZod, userUpdateZod } = require("../types")
 const { generateHash, compareHash } = require("../bcrypt")
 const { JWT_SECRET } = require("../config")
-const User = require("../db")
+const { User } = require("../db")
 const { authMiddleware } = require("../middleware")
 
 userRouter.post("/signup", async (req, res) => {
@@ -152,13 +152,29 @@ userRouter.put("/", authMiddleware, async (req, res) => {
 
 userRouter.get("/bulk", authMiddleware, async (req, res) => {
     try {
+        const searchQuery = req.query.filter || ""
 
+        const users = await User.find({
+            $or: [
+                { firstName: { $regex: searchQuery, $options: 'i' } },
+                { lastName: { $regex: searchQuery, $options: 'i' } }
+            ]
+        }, {
+            _id: 1,
+            username: 1,
+            firstName: 1, 
+            lastName: 1
+        });
+
+        return res.status(200).json({
+            users: users,
+        })
 
     } catch (error) {
         console.log("Bulk Error", error)
 
         return res.status(500).json({
-            message: "Internal Server Error during Update"
+            message: "Internal Server Error during Fetchin Users"
         })
     }
 })
