@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { toast } from "sonner"; 
+import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Card,
@@ -38,21 +38,49 @@ export default function SendMoney() {
     };
 
     const handleTransfer = async () => {
-        if (!amount || isNaN(amount) || Number(amount) <= 0) {
-            // In a real app, you'd use a toast notification here
-            alert("Please enter a valid positive amount.");
+        // 1. Basic Validation
+        if (!amount || Number(amount) <= 0) {
+            toast.warning("Please enter a valid amount");
             return;
         }
 
         setIsLoading(true);
-        console.log(`Initiating transfer of ₹${amount} to ${name} (ID: ${id})`);
 
-        // --- Simulate an API Call ---
-        setTimeout(() => {
+        try {
+            // --- Simulate API Call ---
+            await new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    // SIMULATION: 20% chance the transaction fails (for testing)
+                    const randomChance = Math.random();
+                    if (randomChance < 0.5) {
+                        reject(new Error("Insufficient funds")); // Simulate error
+                    } else {
+                        resolve(); // Simulate success
+                    }
+                }, 2000);
+            });
+
+            // 2. SUCCESS CASE
+            toast.success(`Transfer Successful!`, {
+                description: `You sent ₹${amount} to ${name}.`,
+            });
+
+            // Navigate after a short delay so user sees the success message
+            setTimeout(() => {
+                navigate("/dashboard");
+            }, 1000);
+
+        } catch (error) {
+            // 3. FAILURE CASE
+            console.error("Transfer failed:", error);
+
+            toast.error("Transaction Failed", {
+                description: error.message || "Something went wrong. Please try again.",
+            });
+
+            // Important: Stop loading so they can try again
             setIsLoading(false);
-            alert(`Successfully sent ₹${amount} to ${name}!`);
-            navigate("/dashboard"); // Redirect back to the dashboard
-        }, 2000);
+        }
     };
 
     return (
