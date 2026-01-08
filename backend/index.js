@@ -17,9 +17,9 @@ app.get("/", (req, res) => {
 
 app.use("/api/v1", rootRouter)
 
-app.use((req, res, next, err) => {
+app.use((err, req, res, next) => {
     console.error(err.stack)
-    res.status(500).send({
+    return res.status(500).send({
         message: "Sorry, something went wrong!"
     })
 })

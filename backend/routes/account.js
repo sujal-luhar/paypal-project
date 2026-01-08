@@ -79,9 +79,10 @@ accountRouter.post("/transfer", async(req, res) => {
             });
         }
 
+        const balanceInPaise = Math.floor(amount * 100);
         // Transaction
-        await Account.updateOne({ userId: req.userId }, { $inc: { balance: -amount } }).session(session);
-        await Account.updateOne({ userId: to }, { $inc: { balance: amount } }).session(session);
+        await Account.updateOne({ userId: req.userId }, { $inc: { balance: -balanceInPaise } }).session(session);
+        await Account.updateOne({ userId: to }, { $inc: { balance: balanceInPaise } }).session(session);
 
         // Create Audit Trail (The Ledger) - CRITICAL STEP
         await Transaction.create([{

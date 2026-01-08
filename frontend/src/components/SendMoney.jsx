@@ -14,6 +14,7 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { ArrowLeft, IndianRupee, AlertCircle, Send, Loader2 } from "lucide-react";
+import api from "@/lib/api";
 
 export default function SendMoney() {
     const [searchParams] = useSearchParams();
@@ -24,7 +25,7 @@ export default function SendMoney() {
     const id = searchParams.get("id");
     const name = searchParams.get("name") || "Unknown User";
 
-    const [amount, setAmount] = useState("");
+    const [amount, setAmount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
 
     // Helper to get initials from a name (e.g., "Alice Smith" -> "AS")
@@ -47,21 +48,12 @@ export default function SendMoney() {
         setIsLoading(true);
 
         try {
-            // --- Simulate API Call ---
-            await new Promise((resolve, reject) => {
-                setTimeout(() => {
-                    // SIMULATION: 20% chance the transaction fails (for testing)
-                    const randomChance = Math.random();
-                    if (randomChance < 0.5) {
-                        reject(new Error("Insufficient funds")); // Simulate error
-                    } else {
-                        resolve(); // Simulate success
-                    }
-                }, 2000);
-            });
+            const response = await api.post('/account/transfer', {
+                to: id,
+                amount: Number(amount)
+            })
 
-            // 2. SUCCESS CASE
-            toast.success(`Transfer Successful!`, {
+            toast.success(response.data.message, {
                 description: `You sent ₹${amount} to ${name}.`,
             });
 
@@ -71,14 +63,17 @@ export default function SendMoney() {
             }, 1000);
 
         } catch (error) {
-            // 3. FAILURE CASE
-            console.error("Transfer failed:", error);
+            if (error.response?.status === 400) {
+                toast.error("Transfer failed", {
+                    description: error.response.data.message,
+                });
+            }
+            else {
+                toast.error("Transfer failed", {
+                    description: "Something went wrong. Please try again.",
+                });
+            }
 
-            toast.error("Transaction Failed", {
-                description: error.message || "Something went wrong. Please try again.",
-            });
-
-            // Important: Stop loading so they can try again
             setIsLoading(false);
         }
     };
@@ -140,11 +135,11 @@ export default function SendMoney() {
 
                                         // Regex: Only allow positive numbers and max 2 decimal places (optional)
                                         // If you want integers only, use /^\d*$/
-                                        if (/^\d*\.?\d*$/.test(value)) {
+                                        if (/^\d*\.?\d{0,2}$/.test(value)) {
                                             setAmount(value);
                                             setWarning(""); // Clear warning if valid
                                         } else {
-                                            setWarning("Only numbers are allowed");
+                                            setWarning("Only numbers with only 2 decimals are allowed");
                                         }
                                     }}
                                     onKeyDown={(e) => {
