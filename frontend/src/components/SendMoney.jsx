@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,12 @@ export default function SendMoney() {
 
     const [amount, setAmount] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        if(!localStorage.getItem("token")) {
+            navigate("/signin")
+        }
+    }, [])
 
     // Helper to get initials from a name (e.g., "Alice Smith" -> "AS")
     const getInitials = (fullName) => {
