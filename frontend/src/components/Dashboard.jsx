@@ -24,6 +24,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     const handleBalance = async () => {
+      if(!localStorage.getItem("token")) {
+        navigate("/signin")
+      }
+      
       try {
         setIsBalanceLoading(true)
 
